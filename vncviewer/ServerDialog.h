@@ -20,7 +20,7 @@
 #define __SERVERDIALOG_H__
 
 #include <FL/Fl_Window.H>
-
+#include <FL/Fl_Input_Choice.H>
 class Fl_Widget;
 class Fl_Input;
 
@@ -41,7 +41,9 @@ protected:
   static void handleConnect(Fl_Widget *widget, void *data);
 
 protected:
-  Fl_Input *serverName;
+  Fl_Input_Choice *serverName;
+  void loadTheHistory(void);
+  void saveTheHistory(void);
 };
 
 #endif

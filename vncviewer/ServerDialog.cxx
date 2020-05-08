@@ -29,6 +29,7 @@
 #include <FL/fl_ask.H>
 #include <FL/Fl_Box.H>
 #include <FL/Fl_File_Chooser.H>
+#include <FL/Fl_Input_Choice.H>
 
 #include "ServerDialog.h"
 #include "OptionsDialog.h"
@@ -37,6 +38,7 @@
 #include "vncviewer.h"
 #include "parameters.h"
 #include "rfb/Exception.h"
+#include "history.h"
 
 ServerDialog::ServerDialog()
   : Fl_Window(450, 160, _("VNC Viewer: Connection Details"))
@@ -51,7 +53,8 @@ ServerDialog::ServerDialog()
   x = margin + server_label_width;
   y = margin;
   
-  serverName = new Fl_Input(x, y, w() - margin*2 - server_label_width, INPUT_HEIGHT, _("VNC server:"));
+  serverName = new Fl_Input_Choice(x, y, w() - margin*2 - server_label_width, INPUT_HEIGHT, _("VNC server:"));
+  loadTheHistory();
 
   int adjust = (w() - 20) / 4;
   int button_width = adjust - margin/2;
@@ -227,7 +230,7 @@ void ServerDialog::handleCancel(Fl_Widget *widget, void *data)
 {
   ServerDialog *dialog = (ServerDialog*)data;
 
-  dialog->serverName->value(NULL);
+  dialog->serverName->value((char*)NULL);
   dialog->hide();
 }
 
@@ -241,7 +244,55 @@ void ServerDialog::handleConnect(Fl_Widget *widget, void *data)
   
   try {
     saveViewerParameters(NULL, servername);
+    dialog->saveTheHistory();
   } catch (rfb::Exception& e) {
     fl_alert("%s", e.str());
   }
+}
+
+void ServerDialog::loadTheHistory(void){
+	// Load history data
+	std::vector<std::string> History=LoadHistory();
+
+	// Clear server name list
+	serverName->clear();
+
+	// Add histroy to server name list
+	for(std::size_t i=0; i<History.size(); ++i){
+		serverName->add(History[i].c_str());
+	}
+}
+
+void ServerDialog::saveTheHistory(void){
+	// Load history data
+	std::vector<std::string> History=LoadHistory();
+
+	// Get current value
+	std::string CurrentValue=std::string(serverName->value());
+
+	// Find existing entry and move to top if needed
+	bool needsupdate=false;
+	bool found=false;
+	for(std::size_t i=0; i<History.size(); ++i){
+		if(History[i].compare(CurrentValue)==0){
+			found=true;
+			if(i!=0){
+				needsupdate=true;
+				History.erase(History.begin()+i);
+				History.insert(History.begin(),CurrentValue);
+			}
+			break;
+		}
+	}
+
+	// Add entry if not found
+	if(!found){
+		History.insert(History.begin(),CurrentValue);
+		needsupdate=true;
+	}
+
+	// Update history file if necessary
+	if(needsupdate){
+		SaveHistory(History);
+	}
 }

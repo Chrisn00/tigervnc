@@ -15,6 +15,7 @@ set(VNCVIEWER_SOURCES
   Viewport.cxx
   parameters.cxx
   keysym2ucs.c
+  history.cxx
   vncviewer.cxx)
 
 if(WIN32)
